@@ -17,6 +17,7 @@ import { Offboarding } from './pages/Offboarding'
 import { Notifications } from './pages/Notifications'
 import { AdminConfig } from './pages/AdminConfig'
 import { NotFound } from './pages/NotFound'
+import { Attendance, Documents, EmployeeDirectory, EmployeeProfile, Employees, Holidays, LeaveManagement, Performance, ServiceRequests } from './pages/EmployeeManagement'
 
 /** Redirects /pipeline/:roleId → /roles/:roleId */
 function PipelineRedirect() {
@@ -55,6 +56,15 @@ function AppRoutes() {
         <Route path="projects" element={<Projects />} />
         <Route path="joining" element={<Joining />} />
         <Route path="offboarding" element={<Offboarding />} />
+        <Route path="employees" element={<Employees />} />
+        <Route path="employees/:id" element={<EmployeeProfile />} />
+        <Route path="attendance" element={<Attendance />} />
+        <Route path="leave" element={<LeaveManagement />} />
+        <Route path="performance" element={<Performance />} />
+        <Route path="service-requests" element={<ServiceRequests />} />
+        <Route path="documents" element={<Documents />} />
+        <Route path="employee-directory" element={<EmployeeDirectory />} />
+        <Route path="holidays" element={<Holidays />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="admin" element={<AdminConfig />} />
         <Route path="*" element={<NotFound />} />
