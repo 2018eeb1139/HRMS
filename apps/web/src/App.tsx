@@ -18,6 +18,8 @@ import { Notifications } from './pages/Notifications'
 import { AdminConfig } from './pages/AdminConfig'
 import { NotFound } from './pages/NotFound'
 import { Attendance, Documents, EmployeeDirectory, EmployeeProfile, Employees, Holidays, LeaveManagement, Performance, ServiceRequests } from './pages/EmployeeManagement'
+import { EmployeeDashboard, EmployeeAnnouncements, EmployeePayslips, EmployeeSettings } from './pages/EmployeePortal'
+import { EmployeeLayout } from './components/layout/EmployeeLayout'
 
 /** Redirects /pipeline/:roleId → /roles/:roleId */
 function PipelineRedirect() {
@@ -34,6 +36,31 @@ function AppRoutes() {
       <Routes>
         <Route path="login" element={<Login />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    )
+  }
+
+  if (me.role === 'EMPLOYEE') {
+    return (
+      <Routes>
+        <Route path="login" element={<Navigate to="/employee/dashboard" replace />} />
+        <Route element={<EmployeeLayout />}>
+          <Route index element={<Navigate to="/employee/dashboard" replace />} />
+          <Route path="employee/dashboard" element={<EmployeeDashboard />} />
+          <Route path="employee/profile" element={<EmployeeProfile />} />
+          <Route path="employee/attendance" element={<Attendance />} />
+          <Route path="employee/timesheets" element={<Attendance />} />
+          <Route path="employee/leave" element={<LeaveManagement />} />
+          <Route path="employee/performance" element={<Performance />} />
+          <Route path="employee/service-requests" element={<ServiceRequests />} />
+          <Route path="employee/documents" element={<Documents />} />
+          <Route path="employee/payslips" element={<EmployeePayslips />} />
+          <Route path="employee/directory" element={<EmployeeDirectory />} />
+          <Route path="employee/holidays" element={<Holidays />} />
+          <Route path="employee/announcements" element={<EmployeeAnnouncements />} />
+          <Route path="employee/settings" element={<EmployeeSettings />} />
+          <Route path="*" element={<Navigate to="/employee/dashboard" replace />} />
+        </Route>
       </Routes>
     )
   }

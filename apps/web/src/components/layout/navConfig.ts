@@ -5,6 +5,7 @@ export type Role =
   | 'INTERVIEWER'
   | 'LEADERSHIP'
   | 'ADMIN'
+  | 'EMPLOYEE'
 
 export interface NavItem {
   label: string
@@ -12,7 +13,7 @@ export interface NavItem {
   roles: Role[]
 }
 
-const ALL_ROLES: Role[] = ['HR', 'HIRING_MANAGER', 'PROJECT_MANAGER', 'INTERVIEWER', 'LEADERSHIP', 'ADMIN']
+const ALL_ROLES: Role[] = ['HR', 'HIRING_MANAGER', 'PROJECT_MANAGER', 'INTERVIEWER', 'LEADERSHIP', 'ADMIN', 'EMPLOYEE']
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard',      path: '/',              roles: ALL_ROLES },
