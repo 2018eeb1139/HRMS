@@ -1,0 +1,16 @@
+node_modules/
+storage/
+dist/
+build/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+coverage/
+
+# Forge / GitNexus code index (managed; safe to delete)
+.gitnexus/
+
+# Playwright MCP scratch output
+.playwright-mcp/

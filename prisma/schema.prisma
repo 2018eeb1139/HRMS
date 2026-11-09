@@ -1,0 +1,469 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  HR
+  HIRING_MANAGER
+  PROJECT_MANAGER
+  INTERVIEWER
+  LEADERSHIP
+  ADMIN
+}
+
+enum OffboardingSettlementStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum HeadcountCountsOn {
+  OFFER_ACCEPTED
+  JOINED
+}
+
+enum ProjectStatus {
+  PLANNED
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum RoleStatus {
+  DRAFT
+  PENDING_APPROVAL
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  FILLED
+  CANCELLED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  googleId  String?  @unique
+  role      Role     @default(INTERVIEWER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  managedProjects      Project[]          @relation("ProjectManager")
+  rolesAsHiringManager RoleReq[]          @relation("HiringManager")
+  rolesAsHrOwner       RoleReq[]          @relation("HrOwner")
+  communications       CommunicationLog[] @relation("CommunicationOwner")
+  feedbackGiven        Feedback[]         @relation("FeedbackGiven")
+  savedViews           SavedView[]
+  notifications        Notification[]
+}
+
+model Department {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  roles RoleReq[]
+}
+
+model Skill {
+  id   String @id @default(cuid())
+  name String @unique
+}
+
+model SeniorityLevel {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  rank  Int
+  roles RoleReq[]
+}
+
+model Project {
+  id               String        @id @default(cuid())
+  name             String
+  client           String?
+  projectManagerId String?
+  projectManager   User?         @relation("ProjectManager", fields: [projectManagerId], references: [id])
+  startDate        DateTime?
+  endDate          DateTime?
+  status           ProjectStatus @default(PLANNED)
+  createdAt        DateTime      @default(now())
+  roles            RoleReq[]
+}
+
+model RoleReq {
+  id                     String     @id @default(cuid())
+  projectId              String?
+  project                Project?   @relation(fields: [projectId], references: [id])
+  title                  String
+  departmentId           String?
+  department             Department? @relation(fields: [departmentId], references: [id])
+  seniorityId            String?
+  seniority              SeniorityLevel? @relation(fields: [seniorityId], references: [id])
+  requiredCount          Int        @default(1)
+  filledCount            Int        @default(0)
+  location               String?
+  employmentType         String?
+  jobDescription         String?
+  responsibilities       String?
+  requiredSkills         String[]
+  preferredSkills        String[]
+  requiredYearsExperience Int?
+  education              String?
+  certifications         String?
+  languages              String[]
+  salaryRange            String?
+  priority               Priority   @default(MEDIUM)
+  status                 RoleStatus @default(DRAFT)
+  hiringManagerId        String?
+  hiringManager          User?      @relation("HiringManager", fields: [hiringManagerId], references: [id])
+  hrOwnerId              String?
+  hrOwner                User?      @relation("HrOwner", fields: [hrOwnerId], references: [id])
+  targetJoiningDate      DateTime?
+  targetClosureDate      DateTime?
+  closureReason          String?
+  closureNotes           String?
+  closedAt               DateTime?
+  createdAt              DateTime   @default(now())
+
+  applications Application[]
+
+  @@index([projectId, status, priority])
+  @@map("Roles")
+}
+
+model OrgSetting {
+  id                String            @id @default("singleton")
+  headcountCountsOn HeadcountCountsOn @default(OFFER_ACCEPTED)
+}
+
+enum CandidateSource {
+  HR_UPLOAD
+  REFERRAL
+  LINKEDIN
+  JOB_PORTAL
+  AGENCY
+  DIRECT
+  TALENT_POOL
+  INTERNAL
+}
+
+enum CvStatus {
+  UPLOADED
+  PARSING
+  PARSED
+  FAILED
+}
+
+model Candidate {
+  id              String          @id @default(cuid())
+  name            String
+  email           String?
+  phone           String?
+  phoneNormalized String?         @unique
+  address         String?          @db.Text
+  location        String?
+  currentCompany  String?
+  currentRole     String?
+  yearsExperience Int?
+  skills          String[]
+  education       String?
+  certifications  String[]
+  noticePeriod    String?
+  expectedSalary  String?
+  currentSalary   String?
+  linkedinUrl     String?
+  portfolioUrl    String?
+  cvUrl           String?
+  source          CandidateSource @default(HR_UPLOAD)
+  tags            String[]
+  createdAt       DateTime        @default(now())
+
+  cvFiles        CvFile[]
+  applications   Application[]
+  communications CommunicationLog[]
+
+  @@index([email])
+}
+
+model CvFile {
+  id           String    @id @default(cuid())
+  candidateId  String
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  storageKey   String
+  originalName String
+  mimeType     String
+  parsedText   String?   @db.Text
+  parsedJson   Json?
+  status       CvStatus  @default(UPLOADED)
+  uploadedAt   DateTime  @default(now())
+}
+
+enum ApplicationStatus {
+  ACTIVE
+  REJECTED
+  WITHDRAWN
+  HIRED
+  ON_HOLD
+}
+
+model PipelineStage {
+  id         String        @id @default(cuid())
+  key        String        @unique
+  label      String
+  order      Int
+  isTerminal Boolean       @default(false)
+  applications Application[]
+}
+
+model Application {
+  id                String            @id @default(cuid())
+  candidateId       String
+  candidate         Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  roleId            String
+  role              RoleReq           @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  currentStageId    String?
+  currentStage      PipelineStage?    @relation(fields: [currentStageId], references: [id])
+  matchScore        Int?
+  screeningSummary  String?           @db.Text
+  hrRecommendation  String?
+  status            ApplicationStatus @default(ACTIVE)
+  rejectionReason   String?
+  createdAt         DateTime          @default(now())
+  transitions       StageTransition[]
+
+  communications CommunicationLog[]
+  interviews     Interview[]
+  offer          Offer?
+
+  @@unique([candidateId, roleId])
+  @@index([roleId, currentStageId, status])
+}
+
+model StageTransition {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromStageId   String?
+  toStageId     String?
+  at            DateTime    @default(now())
+  byUserId      String?
+}
+
+// ── Communications ────────────────────────────────────────────────────────────
+
+enum CommunicationType {
+  PHONE
+  EMAIL
+  WHATSAPP
+  LINKEDIN
+  INTERVIEW_DISCUSSION
+  INTERNAL_NOTE
+  OFFER_DISCUSSION
+  FOLLOW_UP
+}
+
+model CommunicationLog {
+  id                String            @id @default(cuid())
+  candidateId       String
+  candidate         Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  applicationId     String?
+  application       Application?      @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  type              CommunicationType
+  ownerId           String
+  owner             User              @relation("CommunicationOwner", fields: [ownerId], references: [id])
+  summary           String            @db.Text
+  candidateResponse String?           @db.Text
+  nextAction        String?
+  followUpDate      DateTime?
+  attachmentKey     String?
+  createdAt         DateTime          @default(now())
+
+  @@index([candidateId])
+  @@index([followUpDate])
+}
+
+// ── Interviews ────────────────────────────────────────────────────────────────
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  RESCHEDULED
+  CANCELLED
+  CANDIDATE_NO_SHOW
+  INTERVIEWER_NO_SHOW
+}
+
+model Interview {
+  id            String          @id @default(cuid())
+  applicationId String
+  application   Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageKey      String?
+  interviewerIds String[]
+  scheduledAt   DateTime
+  durationMin   Int             @default(60)
+  meetingLink   String?
+  icsUid        String
+  googleEventId String?
+  status        InterviewStatus @default(SCHEDULED)
+  createdAt     DateTime        @default(now())
+
+  feedback      Feedback[]
+
+  @@index([applicationId])
+  @@index([scheduledAt, status])
+}
+
+// ── Feedback ──────────────────────────────────────────────────────────────────
+
+enum FeedbackRecommendation {
+  STRONG_HIRE
+  HIRE
+  HOLD
+  REJECT
+  CONSIDER_OTHER_ROLE
+}
+
+model FeedbackTemplate {
+  id             String   @id @default(cuid())
+  name           String
+  roleType       String?
+  seniority      String?
+  stageKey       String?
+  ratingScaleMax Int      @default(5)
+  fields         Json
+  createdAt      DateTime @default(now())
+}
+
+model Feedback {
+  id             String                 @id @default(cuid())
+  interviewId    String
+  interview      Interview              @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewerId  String
+  interviewer    User                   @relation("FeedbackGiven", fields: [interviewerId], references: [id])
+  templateId     String?
+  scores         Json
+  strengths      String?                @db.Text
+  concerns       String?                @db.Text
+  notes          String?                @db.Text
+  recommendation FeedbackRecommendation
+  submittedAt    DateTime               @default(now())
+
+  @@unique([interviewId, interviewerId])
+  @@index([interviewId])
+}
+
+model AiResult {
+  id            String   @id @default(cuid())
+  type          String
+  inputHash     String
+  model         String
+  promptVersion String
+  output        Json
+  createdAt     DateTime @default(now())
+
+  @@unique([type, inputHash, model, promptVersion])
+  @@map("ai_results")
+}
+
+// ── Offers & Joining ──────────────────────────────────────────────────────────
+
+enum OfferStatus {
+  TO_BE_PREPARED
+  SENT
+  UNDER_NEGOTIATION
+  ACCEPTED
+  REJECTED
+  JOINED
+}
+
+enum JoiningRisk {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Offer {
+  id                   String      @id @default(cuid())
+  applicationId        String      @unique
+  application          Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  offeredSalary        String?
+  offerDate            DateTime?
+  status               OfferStatus @default(TO_BE_PREPARED)
+  expectedJoiningDate  DateTime?
+  confirmedJoiningDate DateTime?
+  noticePeriod         String?
+  documentsPending     String[]
+  joiningRisk          JoiningRisk?
+  notes                String?     @db.Text
+  createdAt            DateTime    @default(now())
+  offboarding          Offboarding?
+
+  @@index([status])
+  @@index([confirmedJoiningDate])
+}
+
+model Offboarding {
+  id                         String    @id @default(cuid())
+  offerId                    String    @unique
+  offer                      Offer     @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  lastWorkingDate            DateTime
+  knowledgeTransferCompleted Boolean   @default(false)
+  managerApprovalReceived    Boolean   @default(false)
+  assetsIssued               Boolean   @default(false)
+  assetsReturned             Boolean   @default(false)
+  settlementStartedAt        DateTime?
+  settlementStatus           OffboardingSettlementStatus @default(NOT_STARTED)
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+}
+
+// ── Alerts & Notifications ────────────────────────────────────────────────────
+
+model Notification {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String
+  entityType String?
+  entityId   String?
+  message    String    @db.Text
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+model AlertRule {
+  id        String   @id @default(cuid())
+  type      String   @unique
+  enabled   Boolean  @default(true)
+  config    Json
+  updatedAt DateTime @updatedAt
+}
+
+// ── Saved Views ───────────────────────────────────────────────────────────────
+
+model SavedView {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  scope     String
+  filters   Json
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("saved_views")
+}

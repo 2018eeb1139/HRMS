@@ -1,0 +1,27 @@
+{
+  "name": "picode-hr",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "dev:api": "pnpm --filter @picode-hr/api dev",
+    "dev:web": "pnpm --filter @picode-hr/web dev",
+    "dev:worker": "pnpm --filter @picode-hr/worker dev",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
+}
