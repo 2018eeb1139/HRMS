@@ -17,9 +17,10 @@ import { FeedbackModule } from './feedback/feedback.module'
 import { OffersModule } from './offers/offers.module'
 import { DashboardsModule } from './dashboards/dashboards.module'
 import { NotificationsModule } from './notifications/notifications.module'
+import { EmployeePortalModule } from './employee-portal/employee-portal.module'
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, ConfigModule, ProjectsModule, RolesModule, StorageModule, QueueModule, CandidatesModule, AiModule, ApplicationsModule, CommunicationsModule, InterviewsModule, FeedbackModule, OffersModule, DashboardsModule, NotificationsModule],
+  imports: [PrismaModule, AuthModule, UsersModule, ConfigModule, ProjectsModule, RolesModule, StorageModule, QueueModule, CandidatesModule, AiModule, ApplicationsModule, CommunicationsModule, InterviewsModule, FeedbackModule, OffersModule, DashboardsModule, NotificationsModule, EmployeePortalModule],
   controllers: [HealthController],
 })
 export class AppModule {}

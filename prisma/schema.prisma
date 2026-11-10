@@ -14,6 +14,7 @@ enum Role {
   INTERVIEWER
   LEADERSHIP
   ADMIN
+  EMPLOYEE
 }
 
 enum OffboardingSettlementStatus {
@@ -69,6 +70,7 @@ model User {
   feedbackGiven        Feedback[]         @relation("FeedbackGiven")
   savedViews           SavedView[]
   notifications        Notification[]
+  employeeProfile      Employee?
 }
 
 model Department {
@@ -430,6 +432,112 @@ model Offboarding {
 }
 
 // ── Alerts & Notifications ────────────────────────────────────────────────────
+
+enum EmployeeAttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  REMOTE
+  ON_LEAVE
+}
+
+enum EmployeeTimesheetStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+model Employee {
+  id                    String                    @id @default(cuid())
+  userId                String                    @unique
+  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                  String
+  email                 String
+  department            String?
+  jobTitle              String?
+  employmentDate        DateTime?
+  emergencyContactName  String?
+  performanceStatus     String                    @default("IN_PROGRESS")
+  reviewDueAt           DateTime?
+  goals                 Json                      @default("[]")
+  attendance            EmployeeAttendance[]
+  leaveBalance          EmployeeLeaveBalance?
+  timesheets            EmployeeTimesheet[]
+  holidays              EmployeeHoliday[]
+  announcements         EmployeeAnnouncement[]
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@index([department])
+  @@map("employees")
+}
+
+model EmployeeAttendance {
+  id         String                    @id @default(cuid())
+  employeeId String
+  employee   Employee                  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date       DateTime                  @db.Date
+  status     EmployeeAttendanceStatus  @default(PRESENT)
+  checkIn    DateTime?
+  checkOut   DateTime?
+  createdAt  DateTime                  @default(now())
+
+  @@unique([employeeId, date])
+  @@index([employeeId, date])
+  @@map("employee_attendance")
+}
+
+model EmployeeLeaveBalance {
+  id         String   @id @default(cuid())
+  employeeId String   @unique
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  annualDays Int      @default(0)
+  usedDays   Int      @default(0)
+  sickDays   Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@map("employee_leave_balances")
+}
+
+model EmployeeTimesheet {
+  id         String                 @id @default(cuid())
+  employeeId String
+  employee   Employee               @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  weekStart  DateTime               @db.Date
+  hours      Decimal                @default(0) @db.Decimal(5, 2)
+  status     EmployeeTimesheetStatus @default(DRAFT)
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+
+  @@unique([employeeId, weekStart])
+  @@index([employeeId, weekStart])
+  @@map("employee_timesheets")
+}
+
+model EmployeeHoliday {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  name       String
+  date       DateTime @db.Date
+
+  @@index([employeeId, date])
+  @@map("employee_holidays")
+}
+
+model EmployeeAnnouncement {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  title       String
+  category    String?
+  body        String   @db.Text
+  publishedAt DateTime @default(now())
+
+  @@index([employeeId, publishedAt])
+  @@map("employee_announcements")
+}
 
 model Notification {
   id         String    @id @default(cuid())
